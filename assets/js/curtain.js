@@ -1,6 +1,8 @@
-// Sheer voile at the hero's left window — invisible until a gust blows it into the room.
-// Hung from a fixed rod along the top edge; the wind (from the left) swings the drop to the right,
-// bending it more towards the hem, with ripples running down the cloth.
+// Sheer chiffon at the hero's left window — invisible until a gust blows it into the room.
+// Hung from a fixed rod along the top edge. The wind (from the left) swings the drop to the right
+// in a soft S, twisting the cloth as it goes so it narrows at the waist and flares open at the end,
+// with ripples running down it. Shaded as sheer white chiffon: faint face-on, bright where it folds
+// edge-on, rolled edges catching the light, overlapping layers adding up like real gauze.
 import * as THREE from 'three';
 
 const VERT = /* glsl */`
@@ -9,28 +11,52 @@ uniform vec2 uOrigin, uSize;  // top-left corner and size of the hanging panel (
 varying vec3 vNormal, vView;
 varying vec2 vUv;
 
-vec3 curtain(float u, float v) {  // u: across from the window edge, v: down from the rod
-  float t = uTime, g = uGust;
-  // blown angle grows down the drop (a + b·v); each part of the width swings a little differently
-  float a = g * (0.32 + 0.12 * sin(u * 3.0 + t * 0.9));
-  float b = g * (0.95 + 0.25 * sin(u * 2.3 - t * 1.1)) + 1e-3;
-  float H = uSize.y;
-  vec3 p = vec3(
-    uOrigin.x + u * uSize.x * (1.0 - 0.3 * g * v) + H * (cos(a) - cos(a + b * v)) / b,
-    uOrigin.y - H * (sin(a + b * v) - sin(a)) / b,
+// centreline of the drop: a pendulum bend (angle a + b·v) with an S-curve travelling along it
+vec3 spine(float v, out vec3 T) {
+  float t = uTime, g = uGust, H = uSize.y;
+  float a = g * (0.3 + 0.08 * sin(t * 0.9));
+  float b = g * (0.85 + 0.18 * sin(t * 0.7 + 1.0)) + 1e-3;
+  float th = a + b * v;
+  vec3 c = vec3(
+    uOrigin.x + uSize.x * 0.5 + H * (cos(a) - cos(th)) / b,
+    uOrigin.y - H * (sin(th) - sin(a)) / b,
     0.0);
-  // ripples racing down the cloth, and soft pleats gathered on the rod
-  float w = sin(v * 9.0 - t * 7.0 + u * 4.0) + 0.5 * sin(v * 17.0 - t * 11.0 - u * 6.0);
-  p.x += g * v * 0.12 * w;
-  p.z += g * v * (0.9 * sin(u * 3.1416) + 0.25 * w) + 0.06 * sin(u * 43.98) * (1.0 - 0.5 * g);
+  T = normalize(vec3(sin(th), -cos(th), 0.0));
+  vec3 side = vec3(-T.y, T.x, 0.0);
+  // the S: a slow wave rolling down the cloth, growing towards the free end
+  float s = sin(v * 4.2 - t * 1.6) + 0.35 * sin(v * 9.0 - t * 2.9);
+  c += side * g * v * 0.42 * s;
+  c.z += g * v * (0.7 + 0.3 * sin(v * 3.0 - t * 1.2));
+  return c;
+}
+
+vec3 cloth(float u, float v) {  // u: across the panel, v: down from the rod
+  float t = uTime, g = uGust;
+  vec3 T;
+  vec3 c = spine(v, T);
+  vec3 side = vec3(-T.y, T.x, 0.0);
+  vec3 depth = vec3(0.0, 0.0, 1.0);
+  // the cloth twists around its drop: edge-on at the waist, opening again at the end
+  float tw = g * (1.5 * v + 0.5 * sin(v * 5.0 - t * 1.7) + 0.25 * sin(u * 3.0 + t));
+  vec3 across = cos(tw) * side + sin(tw) * depth;
+  vec3 nrm = cross(T, across);
+  // width: full on the rod, gathered at the waist, flaring wide at the end
+  float w = uSize.x * (1.0 - g * (0.38 * sin(min(v * 1.25, 1.0) * 3.1416) - 0.45 * v * v));
+  vec3 p = c + across * (u - 0.5) * w;
+  // fluttering ripples across the cloth and rolled, lifting edges
+  float edge = pow(abs(u - 0.5) * 2.0, 3.0);
+  p += nrm * g * v * (0.14 * sin(u * 7.0 + v * 9.0 - t * 6.0) + 0.06 * sin(u * 17.0 - v * 5.0 - t * 9.0));
+  p += nrm * g * edge * (0.18 + 0.12 * sin(t * 2.3 + v * 4.0)) * (0.3 + v);
+  // soft pleats gathered on the rod, smoothed out as the wind takes the cloth
+  p += nrm * 0.05 * sin(u * 43.98) * (1.0 - 0.7 * g);
   return p;
 }
 
 void main() {
-  float u = position.x + 0.5, v = 0.5 - position.y, e = 0.01;
-  vec3 p = curtain(u, v);
-  vec3 du = curtain(u + e, v) - curtain(u - e, v);
-  vec3 dv = curtain(u, v + e) - curtain(u, v - e);
+  float u = position.x + 0.5, v = 0.5 - position.y, e = 0.008;
+  vec3 p = cloth(u, v);
+  vec3 du = cloth(u + e, v) - cloth(u - e, v);
+  vec3 dv = cloth(u, v + e) - cloth(u, v - e);
   vec4 mv = modelViewMatrix * vec4(p, 1.0);
   vNormal = normalize(normalMatrix * cross(du, dv));
   vView = -mv.xyz;
@@ -41,36 +67,39 @@ void main() {
 
 const FRAG = /* glsl */`
 uniform float uGust, uOpacity;
-uniform vec3 uWhite, uGold;
+uniform vec3 uWhite, uShade;
 varying vec3 vNormal, vView;
 varying vec2 vUv;
 
 void main() {
   vec3 n = normalize(vNormal), vd = normalize(vView);
-  // sheer cloth reads denser where it is seen edge-on, in the folds
-  float layers = clamp(0.3 / (abs(dot(n, vd)) + 0.12), 0.0, 2.2);
-  float light = pow(abs(dot(n, normalize(vec3(-0.4, 0.6, 0.7)))), 3.0);
-  vec3 col = mix(uGold, uWhite, 0.45 + 0.55 * light);
-  // fine gold pinstripe in the weave and a gold hem
-  float thread = smoothstep(0.93, 1.0, abs(sin(vUv.x * 3.1416 * 36.0))) * 0.35;
-  float hem = smoothstep(0.965, 0.985, vUv.y);
-  col = mix(col, uGold * 1.25, max(thread, hem));
-  float a = uOpacity * uGust * (0.45 + 0.55 * layers + thread + hem * 1.5);
-  gl_FragColor = vec4(col, a);
+  if (dot(n, vd) < 0.0) n = -n;
+  float facing = clamp(dot(n, vd), 0.0, 1.0);
+  // sheer cloth: little light face-on, much more where it folds away from the eye
+  float fold = pow(1.0 - facing, 2.2);
+  float light = 0.5 + 0.5 * dot(n, normalize(vec3(-0.35, 0.65, 0.68)));
+  // rolled edges and the hem catch a bright line of light
+  float rim = smoothstep(0.44, 0.5, abs(vUv.x - 0.5)) + smoothstep(0.95, 1.0, vUv.y);
+  vec3 col = mix(uShade, uWhite, clamp(0.35 + 0.65 * light + 0.4 * fold, 0.0, 1.0));
+  float a = uOpacity * uGust * (0.2 + 1.5 * fold + 0.8 * rim);
+  // the cloth thins out right at the rod so it seems to come from beyond the frame
+  a *= smoothstep(0.0, 0.06, vUv.y);
+  gl_FragColor = vec4(col * a, 1.0); // additive: overlapping layers build up like real gauze
   #include <colorspace_fragment>
 }
 `;
 
-export function createCurtain({ segments = [48, 72] } = {}) {
+export function createCurtain({ segments = [56, 96] } = {}) {
   const uniforms = {
-    uTime: { value: 0 }, uGust: { value: 0 }, uOpacity: { value: 0.12 },
+    uTime: { value: 0 }, uGust: { value: 0 }, uOpacity: { value: 0.17 },
     uOrigin: { value: new THREE.Vector2() }, uSize: { value: new THREE.Vector2(1, 1) },
-    uWhite: { value: new THREE.Color(0xfffcf5) }, uGold: { value: new THREE.Color(0xc6a86a) },
+    uWhite: { value: new THREE.Color(0xfffdf8) }, uShade: { value: new THREE.Color(0xb9b2a6) },
   };
   const mesh = new THREE.Mesh(
     new THREE.PlaneGeometry(1, 1, segments[0], segments[1]),
     new THREE.ShaderMaterial({ uniforms, vertexShader: VERT, fragmentShader: FRAG,
-      transparent: true, depthWrite: false, side: THREE.DoubleSide }),
+      transparent: true, depthWrite: false, depthTest: false, side: THREE.DoubleSide,
+      blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneMinusSrcColorFactor }),
   );
   mesh.frustumCulled = false;
   const scene = new THREE.Scene();

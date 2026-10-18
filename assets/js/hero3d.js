@@ -2,8 +2,8 @@
 // Proportions follow the product photo; the label is drawn from the PV mark at runtime.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { createSilk } from './silk.js?v=202610190730';
-import { createCurtain } from './curtain.js?v=202610190730';
+import { createSilk } from './silk.js?v=202610191000';
+import { createCurtain } from './curtain.js?v=202610191000';
 
 const stage = document.getElementById('hero3d');
 const hero = stage?.closest('.hero');
