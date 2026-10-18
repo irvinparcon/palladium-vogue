@@ -22,6 +22,15 @@
 
   // Pointer-driven 3D tilt with a soft return; skipped on touch and reduced-motion
   const canTilt = matchMedia('(hover: hover) and (prefers-reduced-motion: no-preference)').matches;
+  // Glass: a soft highlight follows the pointer across each frosted surface
+  document.querySelectorAll('.glass').forEach((el) => {
+    el.addEventListener('pointermove', (e) => {
+      const r = el.getBoundingClientRect();
+      el.style.setProperty('--mx', `${e.clientX - r.left}px`);
+      el.style.setProperty('--my', `${e.clientY - r.top}px`);
+    });
+  });
+
   if (canTilt) {
     document.querySelectorAll('[data-tilt]').forEach((el) => {
       const max = parseFloat(el.dataset.tilt) || 8;
