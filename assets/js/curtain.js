@@ -1,5 +1,5 @@
 // Sheer chiffon at the hero's left window — invisible until a gust blows it into the room.
-// Hung from a fixed rod along the top edge. The wind (from the left) swings the drop to the right
+// Hung from a fixed rod above the top edge, out of frame. The wind (from the left) swings the drop to the right
 // in a soft S, twisting the cloth as it goes so it narrows at the waist and flares open at the end,
 // with ripples running down it. Shaded as sheer white chiffon: faint face-on, bright where it folds
 // edge-on, rolled edges catching the light, overlapping layers adding up like real gauze.
@@ -14,8 +14,8 @@ varying vec2 vUv;
 // centreline of the drop: a pendulum bend (angle a + b·v) with an S-curve travelling along it
 vec3 spine(float v, out vec3 T) {
   float t = uTime, g = uGust, H = uSize.y;
-  float a = g * (0.3 + 0.08 * sin(t * 0.9));
-  float b = g * (0.85 + 0.18 * sin(t * 0.7 + 1.0)) + 1e-3;
+  float a = g * (0.18 + 0.06 * sin(t * 0.9));
+  float b = g * (0.62 + 0.14 * sin(t * 0.7 + 1.0)) + 1e-3;
   float th = a + b * v;
   vec3 c = vec3(
     uOrigin.x + uSize.x * 0.5 + H * (cos(a) - cos(th)) / b,
@@ -82,8 +82,6 @@ void main() {
   float rim = smoothstep(0.44, 0.5, abs(vUv.x - 0.5)) + smoothstep(0.95, 1.0, vUv.y);
   vec3 col = mix(uShade, uWhite, clamp(0.35 + 0.65 * light + 0.4 * fold, 0.0, 1.0));
   float a = uOpacity * uGust * (0.2 + 1.5 * fold + 0.8 * rim);
-  // the cloth thins out right at the rod so it seems to come from beyond the frame
-  a *= smoothstep(0.0, 0.06, vUv.y);
   gl_FragColor = vec4(col * a, 1.0); // additive: overlapping layers build up like real gauze
   #include <colorspace_fragment>
 }
@@ -112,8 +110,10 @@ export function createCurtain({ segments = [56, 96] } = {}) {
     camera.aspect = aspect;
     camera.updateProjectionMatrix();
     const h = 2 * camera.position.z * Math.tan(THREE.MathUtils.degToRad(15)), w = h * aspect;
-    uniforms.uOrigin.value.set(-w / 2 - 0.05, h / 2 + 0.05);
-    uniforms.uSize.value.set(w * width, h * 1.02);
+    // the rod hangs well above the frame, so the cloth always runs off past the top edge
+    const above = h * 0.5;
+    uniforms.uOrigin.value.set(-w / 2 - 0.05, h / 2 + above);
+    uniforms.uSize.value.set(w * width, h * 1.02 + above);
   }
 
   return { scene, camera, uniforms, layout };
