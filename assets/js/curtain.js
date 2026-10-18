@@ -91,7 +91,7 @@ void main() {
 
 export function createCurtain({ segments = [56, 96] } = {}) {
   const uniforms = {
-    uTime: { value: 0 }, uGust: { value: 0 }, uOpacity: { value: 0.17 },
+    uTime: { value: 0 }, uGust: { value: 0 }, uOpacity: { value: 0.1 },
     uOrigin: { value: new THREE.Vector2() }, uSize: { value: new THREE.Vector2(1, 1) },
     uWhite: { value: new THREE.Color(0xfffdf8) }, uShade: { value: new THREE.Color(0xb9b2a6) },
   };
