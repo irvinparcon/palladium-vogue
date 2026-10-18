@@ -13,6 +13,7 @@ Visual sample of the Palladium Vogue homepage for client review — *Editorial W
 - `assets/logo/`: the PV Interlace logo (monogram, seal, stacked and horizontal lockups in gold, ivory and onyx), the Ligature alternative, and `logo-concepts.png`. The SVGs are built from Cormorant Garamond outlines by `build_logo.py`
 
 - `assets/js/hero3d.js`: real-time 3D FELIX bottle for the hero (Three.js 0.160 from jsDelivr), with a studio environment, gold-foil label, gold dust, cursor-follow and scroll turn. It falls back to `assets/images/felix-bottle.png` (transparent cutout) without WebGL and holds still under reduced-motion. Add `?still` to the URL for a static frame
+- `assets/js/silk.js`: silk ribbons drifting in a slow wind behind and around the hero bottle, in champagne gold, ivory and black satin with a gold selvedge. They render in the same Three.js scene; the wind (layered travelling waves and a twist along each ribbon) runs in the vertex shader, and the silk look comes from `MeshPhysicalMaterial` with sheen and anisotropy. The ribbons unfurl on load, part around the cursor, lift away on scroll, and fade out softly where the canvas ends so the showroom photo stays visible. Phones get 3 lighter ribbons instead of 5. Reduced-motion and `?still` both show the same composed frame
 - `assets/images/felix-parfum.jpg`: the product photo with the PV mark and FELIX foil label (label layout in `assets/logo/tools/felix-label.html`)
 
 The app and Private Members dashboard screens are built in HTML/CSS so they stay crisp at every size.
