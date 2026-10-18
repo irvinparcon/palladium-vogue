@@ -100,8 +100,10 @@ p { margin: 0 0 1.1em; color: var(--ivory-70); }
 .nav.is-solid { background: rgba(11, 11, 13, .82); backdrop-filter: blur(14px); border-color: var(--line); }
 .nav__inner {
   max-width: 1400px; margin: 0 auto; padding: 22px var(--gutter);
-  display: grid; grid-template-columns: auto 1fr auto 1fr; align-items: center; gap: 32px;
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 32px;
 }
+/* desktop: the centred mark above the wordmark replaces the left monogram */
+.nav__mono { display: none; }
 .nav__links { display: flex; gap: 34px; align-items: center; }
 .nav__links--right { justify-content: flex-end; }
 .nav__links a:not(.btn) {
@@ -113,7 +115,7 @@ p { margin: 0 0 1.1em; color: var(--ivory-70); }
   font-family: var(--serif); font-size: 21px; letter-spacing: .34em; text-transform: uppercase; color: var(--gold);
   white-space: nowrap;
 }
-.nav__mono { display: inline-flex; align-items: center; }
+.nav__mono { align-items: center; }
 .logo-mark { height: 30px; width: auto; transition: opacity .4s; }
 .nav__mono:hover .logo-mark { opacity: .75; }
 .nav__brand { display: flex; flex-direction: column; align-items: center; gap: 6px; line-height: 1; }
@@ -136,6 +138,7 @@ p { margin: 0 0 1.1em; color: var(--ivory-70); }
   .nav__links { display: none; }
   .nav__toggle { display: block; }
   .nav__inner { grid-template-columns: auto 1fr auto; }
+  .nav__mono { display: inline-flex; }
   .nav__brand { justify-self: center; font-size: 17px; letter-spacing: .26em; }
   .nav__brand-mark { display: none; }
 }
