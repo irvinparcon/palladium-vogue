@@ -2,11 +2,16 @@
 // Proportions follow the product photo; the label is drawn from the PV mark at runtime.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { createSilk } from './silk.js?v=202610190600';
+import { createSilk } from './silk.js?v=202610190730';
+import { createCurtain } from './curtain.js?v=202610190730';
 
 const stage = document.getElementById('hero3d');
+const hero = stage?.closest('.hero');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const still = new URLSearchParams(location.search).has('still'); // static frame for screenshots
+const params = new URLSearchParams(location.search);
+const still = params.has('still'); // static frame for screenshots
+const showCurtain = params.has('curtain'); // with ?still: freeze the curtain mid-gust
+const GUST_EVERY = 60; // seconds between the curtain's gusts
 const narrow = matchMedia('(max-width: 700px)').matches;
 
 function webglOK() {
@@ -14,7 +19,7 @@ function webglOK() {
   catch { return false; }
 }
 
-if (stage && webglOK()) init().catch((e) => console.warn('[hero3d]', e));
+if (stage && hero && webglOK()) init().catch((e) => console.warn('[hero3d]', e));
 
 async function init() {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
@@ -22,7 +27,14 @@ async function init() {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
-  stage.appendChild(renderer.domElement);
+  renderer.autoClear = false;
+  // one canvas across the whole hero, behind the text: the curtain uses all of it,
+  // the bottle scene draws into the stage's rectangle
+  const layer = document.createElement('div');
+  layer.className = 'hero__gl';
+  layer.setAttribute('aria-hidden', 'true');
+  layer.appendChild(renderer.domElement);
+  stage.after(layer);
 
   const scene = new THREE.Scene();
   const pmrem = new THREE.PMREMGenerator(renderer);
@@ -131,6 +143,16 @@ async function init() {
   const silk = createSilk(narrow ? { only: [0, 1, 3], segments: 140 } : {});
   scene.add(silk.group);
 
+  // ---------- sheer curtain at the window, blown in by a gust every minute and on click ----------
+  const curtain = createCurtain(narrow ? { segments: [32, 56] } : {});
+  let gust = 0, gustAt = -1e9, nextGust = GUST_EVERY;
+  const blow = (now) => {
+    // a new gust while one is blowing keeps it at full strength instead of restarting it
+    const age = now - gustAt;
+    gustAt = age < 6 ? now - Math.min(age, 0.7) : now;
+  };
+  if (!reduced) hero.addEventListener('pointerdown', () => blow(clock.elapsedTime), { passive: true });
+
   // ---------- interaction ----------
   const pointer = { x: 0, y: 0 }, eased = { x: 0, y: 0 };
   const onStage = new THREE.Vector2(9, 9), lastPointer = new THREE.Vector2(9, 9);
@@ -144,24 +166,41 @@ async function init() {
   addEventListener('pointerdown', track, { passive: true });
   document.documentElement.addEventListener('pointerleave', () => onStage.set(9, 9));
 
+  const view = { x: 0, y: 0, w: 1, h: 1 }; // the stage inside the hero canvas (CSS px, GL origin bottom-left)
   function resize() {
-    const { width, height } = stage.getBoundingClientRect();
-    renderer.setSize(width, height, false);
-    camera.aspect = width / Math.max(height, 1);
+    const H = hero.getBoundingClientRect(), S = stage.getBoundingClientRect();
+    renderer.setSize(H.width, H.height, false);
+    Object.assign(view, { x: S.left - H.left, y: H.bottom - S.bottom, w: S.width, h: S.height });
+    camera.aspect = S.width / Math.max(S.height, 1);
     // keep the bottle comfortably framed on narrow stages
     camera.position.z = camera.aspect < 0.8 ? 8.3 / Math.max(camera.aspect / 0.8, 0.72) : 8.3;
     camera.updateProjectionMatrix();
-    renderer.getDrawingBufferSize(silk.uniforms.uRes.value);
-    // feather the silk where the canvas ends inside the page (left edge on desktop, top/bottom always)
+    const pr = renderer.getPixelRatio();
+    silk.uniforms.uView.value.set(view.x * pr, view.y * pr, view.w * pr, view.h * pr);
+    // feather the silk where the stage ends inside the page (left edge on desktop, top/bottom always)
     silk.uniforms.uFade.value.set(narrow ? 0 : 0.26, 0, narrow ? 0.3 : 0.2, narrow ? 0.18 : 0.14);
+    // the curtain covers the left of the window: about a third of the hero, more on phones
+    curtain.layout(H.width / Math.max(H.height, 1), narrow ? 0.55 : 0.36);
     // resizing clears the canvas; redraw when the loop isn't running (still / reduced motion)
-    if (reduced || still) renderer.render(scene, camera);
+    if (reduced || still) draw();
   }
-  new ResizeObserver(resize).observe(stage);
+  const ro = new ResizeObserver(resize);
+  ro.observe(hero); ro.observe(stage);
   resize();
 
+  function draw() {
+    renderer.setScissorTest(false);
+    renderer.setViewport(0, 0, layer.clientWidth, layer.clientHeight);
+    renderer.clear();
+    if (gust > 0.002) renderer.render(curtain.scene, curtain.camera);
+    renderer.setViewport(view.x, view.y, view.w, view.h);
+    renderer.setScissor(view.x, view.y, view.w, view.h);
+    renderer.setScissorTest(true);
+    renderer.render(scene, camera);
+  }
+
   let visible = true;
-  new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) loop(); }).observe(stage);
+  new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) loop(); }).observe(hero);
 
   const clock = new THREE.Clock();
   const intro = reduced || still ? 1 : 0;
@@ -205,6 +244,16 @@ async function init() {
     }
     su.uPower.value += (Math.min(su.uVel.value.length() / 2.5, 1) - su.uPower.value) * 0.06;
     silk.group.rotation.y = eased.x * 0.06;
+
+    // curtain: rises fast with the gust, holds while it billows, then falls back and fades away
+    const now = clock.elapsedTime;
+    if (!reduced && !still && now >= nextGust) { blow(now); nextGust += GUST_EVERY; }
+    const age = now - gustAt, smooth = THREE.MathUtils.smoothstep;
+    const target = still ? (showCurtain ? 1 : 0) : smooth(age, 0, 0.7) * (1 - smooth(age, 2.4, 6));
+    gust = still ? target : gust + (target - gust) * (1 - Math.exp(-dt * 6)); // same pace at any frame rate
+    curtain.uniforms.uGust.value = gust;
+    curtain.uniforms.uTime.value = still ? 1.3 : now;
+    su.uStorm.value = gust;
     silk.group.rotation.x = eased.y * 0.03;
 
     const p = dustGeo.attributes.position.array;
@@ -216,7 +265,7 @@ async function init() {
     dustGeo.attributes.position.needsUpdate = true;
     dust.rotation.y = t * 0.02;
 
-    renderer.render(scene, camera);
+    draw();
   }
   function loop() {
     cancelAnimationFrame(raf);
@@ -268,11 +317,11 @@ async function makeLabel() {
 
   const mark = await new Promise((res) => {
     const img = new Image(); img.onload = () => res(img); img.onerror = () => res(null);
-    img.src = 'assets/logo/pv-interlace-mark-gold.svg';
+    img.src = 'assets/logo/pv-interlace-circle-gold.svg';
   });
   if (mark) {
-    // tint the mark with the foil gradient
-    const mw = 300, mh = mw * (680 / 1010), mc = document.createElement('canvas');
+    // tint the circled mark with the foil gradient
+    const mw = 240, mh = 240, mc = document.createElement('canvas');
     mc.width = mw; mc.height = mh;
     const mg = mc.getContext('2d');
     mg.drawImage(mark, 0, 0, mw, mh);
@@ -280,7 +329,7 @@ async function makeLabel() {
     const mf = mg.createLinearGradient(0, 0, 0, mh);
     mf.addColorStop(0, '#F3E2B4'); mf.addColorStop(0.6, '#C9A465'); mf.addColorStop(1, '#A88548');
     mg.fillStyle = mf; mg.fillRect(0, 0, mw, mh);
-    g.drawImage(mc, (1024 - mw) / 2, 230);
+    g.drawImage(mc, (1024 - mw) / 2, 232);
   }
   g.fillRect(452, 498, 120, 2.5);
   g.textAlign = 'center'; g.textBaseline = 'alphabetic';

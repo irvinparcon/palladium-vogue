@@ -6,23 +6,23 @@ import * as THREE from 'three';
 // x0, x1: span (runs well past the frame) · y, slope, bow: resting path · z, zAmp: depth
 // amp, waves, speed, twist: wind · width · phase · lift: how far scroll carries it away
 const RIBBONS = [
-  { tone: 'gold',   x0: -3.9, x1: 4.2, y: 0.1, slope: -1.1, bow: 0.55, z: -1.5, zAmp: 0.5, amp: 0.26, waves: 1.1, speed: 0.55, twist: 1.25, width: 0.44, phase: 0.0, lift: 1.4 },
-  { tone: 'ivory',  x0: -4.2, x1: 4.0, y: -0.75, slope: 1.5, bow: -0.3, z: -2.5, zAmp: 0.6, amp: 0.22, waves: 0.9, speed: 0.42, twist: 1.6, width: 0.3, phase: 2.1, lift: -1.1 },
-  { tone: 'onyx',   x0: -4.4, x1: 4.4, y: 1.25, slope: -0.4, bow: 0.25, z: -1.0, zAmp: 0.45, amp: 0.2, waves: 1.3, speed: 0.5, twist: 1.1, width: 0.5, phase: 4.0, lift: 1.8 },
-  { tone: 'gold',   x0: -3.6, x1: 3.8, y: -1.3, slope: 0.5, bow: -0.2, z: 1.2, zAmp: 0.35, amp: 0.16, waves: 1.0, speed: 0.6, twist: 1.8, width: 0.16, phase: 5.3, lift: -1.4 },
-  { tone: 'ivory',  x0: -4.0, x1: 4.4, y: 1.35, slope: 0.6, bow: -0.15, z: -3.4, zAmp: 0.4, amp: 0.2, waves: 1.0, speed: 0.38, twist: 1.4, width: 0.18, phase: 1.2, lift: 1.2 },
+  { tone: 'gold',   x0: -3.9, x1: 4.2, y: 0.1, slope: -1.1, bow: 0.55, z: -1.5, zAmp: 0.5, amp: 0.26, waves: 1.1, speed: 0.55, twist: 1.25, width: 0.264, phase: 0.0, lift: 1.4 },
+  { tone: 'ivory',  x0: -4.2, x1: 4.0, y: -0.75, slope: 1.5, bow: -0.3, z: -2.5, zAmp: 0.6, amp: 0.22, waves: 0.9, speed: 0.42, twist: 1.6, width: 0.18, phase: 2.1, lift: -1.1 },
+  { tone: 'onyx',   x0: -4.4, x1: 4.4, y: 1.25, slope: -0.4, bow: 0.25, z: -1.0, zAmp: 0.45, amp: 0.2, waves: 1.3, speed: 0.5, twist: 1.1, width: 0.3, phase: 4.0, lift: 1.8 },
+  { tone: 'gold',   x0: -3.6, x1: 3.8, y: -1.3, slope: 0.5, bow: -0.2, z: 1.2, zAmp: 0.35, amp: 0.16, waves: 1.0, speed: 0.6, twist: 1.8, width: 0.096, phase: 5.3, lift: -1.4 },
+  { tone: 'ivory',  x0: -4.0, x1: 4.4, y: 1.35, slope: 0.6, bow: -0.15, z: -3.4, zAmp: 0.4, amp: 0.2, waves: 1.0, speed: 0.38, twist: 1.4, width: 0.108, phase: 1.2, lift: 1.2 },
 ];
 
 const TONES = {
   // champagne satin: metallic body, warm sheen, highlights pulled along the weave
-  gold: { color: 0xc6a86a, metalness: 0.55, roughness: 0.3, sheen: 1, sheenColor: 0xf6e2b2, sheenRoughness: 0.32, anisotropy: 0.75, envMapIntensity: 1.25, edge: 0xf1dca8, opacity: 0.95 },
-  ivory: { color: 0xe9e1d2, metalness: 0.0, roughness: 0.48, sheen: 1, sheenColor: 0xfff6e6, sheenRoughness: 0.4, anisotropy: 0.5, envMapIntensity: 0.9, edge: 0xffffff, opacity: 0.86 },
+  gold: { color: 0xc6a86a, metalness: 0.55, roughness: 0.3, sheen: 1, sheenColor: 0xf6e2b2, sheenRoughness: 0.32, anisotropy: 0.75, envMapIntensity: 1.25, edge: 0xf1dca8, opacity: 0.19 },
+  ivory: { color: 0xe9e1d2, metalness: 0.0, roughness: 0.48, sheen: 1, sheenColor: 0xfff6e6, sheenRoughness: 0.4, anisotropy: 0.5, envMapIntensity: 0.9, edge: 0xffffff, opacity: 0.172 },
   // deep black satin with a champagne sheen and a fine gold selvedge
-  onyx: { color: 0x0f0e11, metalness: 0.25, roughness: 0.26, sheen: 1, sheenColor: 0xc6a86a, sheenRoughness: 0.3, anisotropy: 0.8, envMapIntensity: 1.4, clearcoat: 0.35, clearcoatRoughness: 0.2, edge: 0xc6a86a, opacity: 0.97 },
+  onyx: { color: 0x0f0e11, metalness: 0.25, roughness: 0.26, sheen: 1, sheenColor: 0xc6a86a, sheenRoughness: 0.3, anisotropy: 0.8, envMapIntensity: 1.4, clearcoat: 0.35, clearcoatRoughness: 0.2, edge: 0xc6a86a, opacity: 0.194 },
 };
 
 const VERT_PARS = /* glsl */`
-uniform float uTime, uScroll, uLift, uWidth;
+uniform float uTime, uScroll, uLift, uWidth, uStorm;
 uniform vec4 uPathA;  // x0, x1, y, slope
 uniform vec4 uPathB;  // z, zAmp, bow, phase
 uniform vec4 uWind;   // amp, waves, speed, twist
@@ -38,11 +38,11 @@ vec3 silkCentre(float u) {
     uPathA.z + uPathA.w * (u - 0.5) + uPathB.z * sin(u * 3.1416),
     uPathB.x + uPathB.y * sin(u * 4.08 + ph));
   // layered travelling waves: the wind moves along the ribbon, never repeating exactly
-  float a = uWind.x * breath;
+  float a = uWind.x * breath * (1.0 + 1.4 * uStorm); // the curtain's gust shakes the silk too
   c.y += a * (0.75 * sin(u * k - t * uWind.z + ph) + 0.25 * sin(u * k * 2.7 - t * uWind.z * 1.6 + ph * 1.7))
        + 0.22 * sin(u * 8.2 - t * 0.21 + ph * 0.5);
   c.z += a * 1.1 * cos(u * k * 0.8 - t * uWind.z * 0.9 + ph);
-  c.x += 0.06 * sin(u * 9.0 - t * 0.7 + ph);
+  c.x += 0.06 * sin(u * 9.0 - t * 0.7 + ph) + uStorm * 0.3 * u;
   // the cursor, measured on screen so every ribbon reacts right under it whatever its depth:
   // resting over the silk parts it, sweeping drags it along and sets it rippling
   vec4 cp = projectionMatrix * modelViewMatrix * vec4(c, 1.0);
@@ -78,8 +78,8 @@ vec3 silkPoint(float u, float v, out vec3 T, out vec3 A) {
 const FRAG_PARS = /* glsl */`
 uniform float uReveal;
 uniform vec3 uEdge;
-uniform vec4 uFade;  // fraction of the canvas to fade at left, right, bottom, top
-uniform vec2 uRes;
+uniform vec4 uFade;  // fraction of the stage to fade at left, right, bottom, top
+uniform vec4 uView;  // the stage's viewport in the canvas (device px)
 varying vec2 vRib;
 `;
 
@@ -92,8 +92,8 @@ const FRAG_ALPHA = /* glsl */`
   float a = 1.0 - smoothstep(0.88, 1.0, across);
   // unfurls into frame along its length
   a *= 1.0 - smoothstep(uReveal * 1.15 - 0.15, uReveal * 1.15, vRib.x);
-  // never a hard edge where the canvas ends
-  vec2 s = gl_FragCoord.xy / uRes;
+  // never a hard edge where the stage ends
+  vec2 s = (gl_FragCoord.xy - uView.xy) / uView.zw;
   a *= smoothstep(0.0, uFade.x + 1e-4, s.x) * smoothstep(0.0, uFade.y + 1e-4, 1.0 - s.x)
      * smoothstep(0.0, uFade.z + 1e-4, s.y) * smoothstep(0.0, uFade.w + 1e-4, 1.0 - s.y);
   diffuseColor.a *= a;
@@ -106,14 +106,15 @@ export function createSilk({ only = RIBBONS.map((_, i) => i), segments = 220 } =
     uTime: { value: 0 }, uScroll: { value: 0 }, uReveal: { value: 1 },
     uPointer: { value: new THREE.Vector2(9, 9) }, uVel: { value: new THREE.Vector2() },
     uHover: { value: 0 }, uPower: { value: 0 },
-    uFade: { value: new THREE.Vector4(0, 0, 0, 0) }, uRes: { value: new THREE.Vector2(1, 1) },
+    uFade: { value: new THREE.Vector4(0, 0, 0, 0) }, uView: { value: new THREE.Vector4(0, 0, 1, 1) },
+    uStorm: { value: 0 },
   };
   const geo = new THREE.PlaneGeometry(1, 1, segments, 6);
 
   only.map((i) => RIBBONS[i]).forEach((r) => {
     const { edge, ...tone } = TONES[r.tone];
     const mat = new THREE.MeshPhysicalMaterial({
-      ...tone, side: THREE.DoubleSide, transparent: true,
+      ...tone, side: THREE.DoubleSide, transparent: true, depthWrite: false,
     });
     const own = {
       uPathA: { value: new THREE.Vector4(r.x0, r.x1, r.y, r.slope) },

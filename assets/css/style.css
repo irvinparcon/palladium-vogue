@@ -116,10 +116,10 @@ p { margin: 0 0 1.1em; color: var(--ivory-70); }
   white-space: nowrap;
 }
 .nav__mono { align-items: center; }
-.logo-mark { height: 30px; width: auto; transition: opacity .4s; }
+.logo-mark { height: 40px; width: auto; transition: opacity .4s; }
 .nav__mono:hover .logo-mark { opacity: .75; }
 .nav__brand { display: flex; flex-direction: column; align-items: center; gap: 6px; line-height: 1; }
-.nav__brand-mark { height: 24px; width: auto; }
+.nav__brand-mark { height: 38px; width: auto; }
 .nav__toggle { display: none; background: none; border: 0; width: 34px; height: 34px; padding: 0; cursor: pointer; justify-self: end; }
 .nav__toggle span { display: block; height: 1px; background: var(--ivory); margin: 8px 4px; transition: transform .4s var(--ease); }
 .nav__toggle[aria-expanded="true"] span:first-child { transform: translateY(4.5px) rotate(45deg); }
@@ -163,7 +163,9 @@ p { margin: 0 0 1.1em; color: var(--ivory-70); }
   position: absolute; z-index: 1; top: 70px; bottom: 140px; right: 0; width: 50%;
   background: radial-gradient(42% 46% at 52% 54%, rgba(198,168,106,.22), rgba(198,168,106,.06) 45%, transparent 70%);
 }
-.hero__stage canvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; }
+/* one WebGL canvas across the hero, under the text: the curtain spans it, the bottle draws into the stage */
+.hero__gl { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.hero__gl canvas { display: block; width: 100% !important; height: 100% !important; }
 .hero__bottle {
   position: absolute; left: 50%; top: 52%; height: min(58vh, 520px); width: auto; transform: translate(-50%, -50%);
   filter: drop-shadow(0 40px 60px rgba(0,0,0,.7)); animation: float 7s ease-in-out infinite;
@@ -263,7 +265,7 @@ p { margin: 0 0 1.1em; color: var(--ivory-70); }
 .phone__screen { height: 100%; border-radius: 36px; background: var(--onyx); overflow: hidden; display: flex; flex-direction: column; padding: 14px 14px 12px; }
 .app__status { display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: var(--ivory-70); padding: 2px 8px 14px; }
 .app__brand { display: flex; justify-content: center; padding: 4px 0 2px; }
-.app__mono { height: 18px; width: auto; }
+.app__mono { height: 28px; width: auto; }
 .app__hero { position: relative; border-radius: 16px; overflow: hidden; height: 41%; margin-top: 8px; }
 .app__hero img { width: 100%; height: 100%; object-fit: cover; }
 .app__hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(11,11,13,.9), rgba(11,11,13,0) 60%); }
@@ -344,7 +346,7 @@ p { margin: 0 0 1.1em; color: var(--ivory-70); }
   box-shadow: 0 50px 120px -30px rgba(0,0,0,.9);
 }
 .dash__side { border-right: 1px solid var(--line); padding: 22px 16px; }
-.dash__logo { height: 24px; width: auto; margin: 0 0 26px 6px; }
+.dash__logo { height: 38px; width: auto; margin: 0 0 26px 6px; }
 .dash__side ul { list-style: none; margin: 0; padding: 0; }
 .dash__side li { font-size: 10.5px; letter-spacing: .08em; color: var(--stone); padding: 8px 10px; border-radius: 6px; margin-bottom: 2px; }
 .dash__side li.on { background: var(--gold-15); color: var(--gold); }
@@ -445,7 +447,7 @@ p { margin: 0 0 1.1em; color: var(--ivory-70); }
 .footer__grid { display: grid; grid-template-columns: 1fr auto auto; gap: 40px; align-items: start; padding-bottom: 44px; border-bottom: 1px solid var(--line); }
 .footer__word { display: block; white-space: nowrap; font-family: var(--serif); font-size: 22px; letter-spacing: .3em; text-transform: uppercase; color: var(--gold); }
 .footer__logo { height: 52px; width: auto; margin: 0 0 10px -4px; }
-.footer__mark { height: 18px; width: auto; opacity: .8; }
+.footer__mark { height: 26px; width: auto; opacity: .8; }
 .footer__brand small { font-size: 11px; letter-spacing: .14em; color: var(--stone); }
 .footer__links, .footer__legal { display: flex; gap: 28px; flex-wrap: wrap; }
 .footer a { font: 400 10px/1 var(--sans); letter-spacing: .24em; text-transform: uppercase; color: var(--ivory-70); transition: color .4s; }
