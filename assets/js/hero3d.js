@@ -2,10 +2,12 @@
 // Proportions follow the product photo; the label is drawn from the PV mark at runtime.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { createSilk } from './silk.js?v=202610190600';
 
 const stage = document.getElementById('hero3d');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const still = new URLSearchParams(location.search).has('still'); // static frame for screenshots
+const narrow = matchMedia('(max-width: 700px)').matches;
 
 function webglOK() {
   try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); }
@@ -125,12 +127,22 @@ async function init() {
   }));
   scene.add(dust);
 
+  // ---------- silk ribbons in the wind, behind and around the bottle ----------
+  const silk = createSilk(narrow ? { only: [0, 1, 3], segments: 140 } : {});
+  scene.add(silk.group);
+
   // ---------- interaction ----------
   const pointer = { x: 0, y: 0 }, eased = { x: 0, y: 0 };
-  addEventListener('pointermove', (e) => {
+  const onStage = new THREE.Vector2(9, 9), lastPointer = new THREE.Vector2(9, 9);
+  const track = (e) => {
     pointer.x = (e.clientX / innerWidth) * 2 - 1;
     pointer.y = (e.clientY / innerHeight) * 2 - 1;
-  }, { passive: true });
+    const r = stage.getBoundingClientRect();
+    onStage.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  };
+  addEventListener('pointermove', track, { passive: true });
+  addEventListener('pointerdown', track, { passive: true });
+  document.documentElement.addEventListener('pointerleave', () => onStage.set(9, 9));
 
   function resize() {
     const { width, height } = stage.getBoundingClientRect();
@@ -139,6 +151,9 @@ async function init() {
     // keep the bottle comfortably framed on narrow stages
     camera.position.z = camera.aspect < 0.8 ? 8.3 / Math.max(camera.aspect / 0.8, 0.72) : 8.3;
     camera.updateProjectionMatrix();
+    renderer.getDrawingBufferSize(silk.uniforms.uRes.value);
+    // feather the silk where the canvas ends inside the page (left edge on desktop, top/bottom always)
+    silk.uniforms.uFade.value.set(narrow ? 0 : 0.26, 0, narrow ? 0.3 : 0.2, narrow ? 0.18 : 0.14);
     // resizing clears the canvas; redraw when the loop isn't running (still / reduced motion)
     if (reduced || still) renderer.render(scene, camera);
   }
@@ -168,6 +183,29 @@ async function init() {
     rig.rotation.x = eased.y * 0.12 + 0.04;
     rig.position.y = Math.sin(t * 0.8) * 0.06 * ease + (1 - ease) * -0.4;
     shadow.material.opacity = 0.65 - Math.sin(t * 0.8) * 0.12;
+
+    // silk: its own clock so the still frame is a composed moment, not t = 0
+    const su = silk.uniforms;
+    su.uTime.value = (still || reduced ? 0 : clock.elapsedTime) + 14;
+    su.uReveal.value = Math.min(1, ease * 1.15);
+    su.uScroll.value = scroll;
+    // cursor → silk: follow softly, part where it rests, ripple and drag when it sweeps
+    const inside = Math.abs(onStage.x) < 1.2 && Math.abs(onStage.y) < 1.2;
+    su.uHover.value += ((inside ? 1 : 0) - su.uHover.value) * 0.05;
+    if (inside) {
+      const fresh = lastPointer.x > 5; // just entered: no jump in velocity
+      su.uPointer.value.lerp(onStage, fresh ? 1 : 0.18);
+      const vx = fresh ? 0 : (onStage.x - lastPointer.x) / Math.max(dt, 1 / 120);
+      const vy = fresh ? 0 : (onStage.y - lastPointer.y) / Math.max(dt, 1 / 120);
+      su.uVel.value.lerp({ x: THREE.MathUtils.clamp(vx, -4, 4), y: THREE.MathUtils.clamp(vy, -4, 4) }, 0.08);
+      lastPointer.copy(onStage);
+    } else {
+      lastPointer.set(9, 9);
+      su.uVel.value.multiplyScalar(0.92);
+    }
+    su.uPower.value += (Math.min(su.uVel.value.length() / 2.5, 1) - su.uPower.value) * 0.06;
+    silk.group.rotation.y = eased.x * 0.06;
+    silk.group.rotation.x = eased.y * 0.03;
 
     const p = dustGeo.attributes.position.array;
     for (let i = 0; i < N; i++) {
