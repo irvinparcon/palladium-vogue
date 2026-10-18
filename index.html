@@ -59,6 +59,14 @@
         <img src="assets/images/hero-showroom.jpg" alt="" fetchpriority="high">
       </div>
       <div class="hero__veil" aria-hidden="true"></div>
+      <div class="hero__stage" id="hero3d" aria-label="FELIX eau de parfum, rotating in 3D">
+        <img class="hero__bottle" src="assets/images/felix-bottle.png" alt="FELIX Maison de Parfum bottle" width="384" height="716">
+      </div>
+      <div class="hero__product reveal">
+        <span class="hero__product-name">FELIX</span>
+        <span class="hero__product-sub">Maison de Parfum · Scents for the discerning</span>
+        <a href="#felix" class="link-quiet">Discover FELIX →</a>
+      </div>
       <div class="container hero__content">
         <p class="eyebrow reveal">Maison Palladium Vogue · Milano</p>
         <h1 class="hero__title reveal">Style.<br>Curated.<br><em>Effortless.</em></h1>
@@ -111,7 +119,7 @@
     <!-- ============ PHILOSOPHY ============ -->
     <section class="philosophy" id="philosophy">
       <div class="container philosophy__grid">
-        <figure class="philosophy__media reveal">
+        <figure class="philosophy__media reveal" data-tilt="3">
           <img src="assets/images/craftsmanship.jpg" alt="Hand-stitched lapel buttonhole, a gold thimble and an open-movement wristwatch on a walnut workbench" loading="lazy">
         </figure>
         <div class="philosophy__text">
@@ -161,7 +169,7 @@
         </div>
 
         <!-- Phone mockup (HTML so it stays crisp at any size) -->
-        <div class="phone reveal" aria-label="Palladium Vogue app preview">
+        <div class="phone reveal" data-tilt aria-label="Palladium Vogue app preview">
           <div class="phone__frame">
             <div class="phone__notch"></div>
             <div class="phone__screen">
@@ -201,19 +209,19 @@
         </div>
       </div>
       <div class="tiles">
-        <a class="tile reveal" href="#members">
+        <a class="tile reveal" href="#members" data-tilt="5">
           <img src="assets/images/wardrobe.jpg" alt="A walnut walk-in wardrobe with folded cashmere and tailored jackets" loading="lazy">
           <div class="tile__cap"><span class="tile__no">01</span><h3>Your Wardrobe</h3><p>Every piece. Every detail. Always organised.</p><span class="arrow">→</span></div>
         </a>
-        <a class="tile reveal" href="#members">
+        <a class="tile reveal" href="#members" data-tilt="5">
           <img src="assets/images/outfit-studio.jpg" alt="An open notebook, fountain pen, cufflinks and fabric swatches on a leather desk" loading="lazy">
           <div class="tile__cap"><span class="tile__no">02</span><h3>Outfit Studio</h3><p>Endless possibilities. Perfect every time.</p><span class="arrow">→</span></div>
         </a>
-        <a class="tile reveal" href="#members">
+        <a class="tile reveal" href="#members" data-tilt="5">
           <img src="assets/images/travel.jpg" alt="A vintage leather suitcase packed with folded shirts and knitwear" loading="lazy">
           <div class="tile__cap"><span class="tile__no">03</span><h3>Travel</h3><p>Plan ahead. Arrive in style.</p><span class="arrow">→</span></div>
         </a>
-        <a class="tile reveal" href="#members">
+        <a class="tile reveal" href="#members" data-tilt="5">
           <img src="assets/images/style-insights.jpg" alt="A man in a tailored overcoat at an arched window overlooking Milan" loading="lazy">
           <div class="tile__cap"><span class="tile__no">04</span><h3>Style Insights</h3><p>Smarter decisions. Stronger style.</p><span class="arrow">→</span></div>
         </a>
@@ -234,7 +242,7 @@
           </dl>
           <a href="#company" class="btn btn--outline reveal">Discover FELIX <span class="arrow">→</span></a>
         </div>
-        <figure class="felix__media reveal">
+        <figure class="felix__media reveal" data-tilt>
           <img src="assets/images/felix-parfum.jpg" alt="A black glass FELIX perfume bottle with a faceted crystal stopper on black marble" loading="lazy">
         </figure>
       </div>
@@ -257,7 +265,7 @@
         </div>
 
         <!-- Members dashboard mockup -->
-        <div class="dash reveal" aria-label="Private Members dashboard preview">
+        <div class="dash reveal" data-tilt="4" aria-label="Private Members dashboard preview">
           <aside class="dash__side">
             <img class="dash__logo" src="assets/logo/pv-interlace-mark-gold.svg" alt="Palladium Vogue" width="40" height="27">
             <ul>
@@ -334,20 +342,20 @@
       <div class="container">
         <p class="eyebrow eyebrow--center reveal">The Palladium Vogue Company</p>
         <div class="company__grid">
-          <div class="house reveal">
+          <div class="house reveal" data-tilt="6">
             <h4>Palladium Vogue</h4><p>AI fashion &amp; wardrobe</p>
             <a href="#platform" class="btn btn--outline btn--sm">Explore</a>
           </div>
-          <div class="house house--img reveal">
+          <div class="house house--img reveal" data-tilt="6">
             <img src="assets/images/felix-parfum.jpg" alt="" loading="lazy">
             <div><h4>FELIX</h4><p>Maison de Parfum</p>
             <a href="#felix" class="btn btn--outline btn--sm">Discover</a></div>
           </div>
-          <div class="house reveal">
+          <div class="house reveal" data-tilt="6">
             <h4>Coming Soon</h4><p>New experiences</p>
             <span class="btn btn--outline btn--sm btn--muted">Stay Tuned</span>
           </div>
-          <div class="house reveal" id="request">
+          <div class="house reveal" data-tilt="6" id="request">
             <h4>Private Access</h4><p>For members only</p>
             <a href="#members" class="btn btn--outline btn--sm">Request Access</a>
           </div>
@@ -409,10 +417,17 @@
     <div class="container footer__base">
       <span>© 2026 Palladium Vogue LLC. All rights reserved.</span>
       <img class="footer__mark" src="assets/logo/pv-interlace-mark-gold.svg" alt="" width="30" height="20">
-      <span>Design preview · Phase I</span>
+      <span>Design preview · Phase I · By: Irvin Parcon</span>
     </div>
   </footer>
 
+  <script type="importmap">
+    { "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    } }
+  </script>
+  <script type="module" src="assets/js/hero3d.js"></script>
   <script src="assets/js/main.js"></script>
 </body>
 </html>

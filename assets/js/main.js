@@ -20,6 +20,25 @@
   drawer.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setDrawer(false)));
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setDrawer(false); });
 
+  // Pointer-driven 3D tilt with a soft return; skipped on touch and reduced-motion
+  const canTilt = matchMedia('(hover: hover) and (prefers-reduced-motion: no-preference)').matches;
+  if (canTilt) {
+    document.querySelectorAll('[data-tilt]').forEach((el) => {
+      const max = parseFloat(el.dataset.tilt) || 8;
+      el.addEventListener('pointerenter', () => el.classList.add('is-tilting'));
+      el.addEventListener('pointermove', (e) => {
+        const r = el.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width - 0.5;
+        const y = (e.clientY - r.top) / r.height - 0.5;
+        el.style.transform = `perspective(1100px) rotateX(${(-y * max).toFixed(2)}deg) rotateY(${(x * max).toFixed(2)}deg) translateZ(0)`;
+      });
+      el.addEventListener('pointerleave', () => {
+        el.style.transform = '';
+        setTimeout(() => el.classList.remove('is-tilting'), 300);
+      });
+    });
+  }
+
   // Subtle fade-and-rise reveals, staggered within each parent
   const items = document.querySelectorAll('.reveal');
   if (!('IntersectionObserver' in window)) {
