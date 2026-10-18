@@ -133,16 +133,16 @@ async function init() {
 
   // ---------- interaction ----------
   const pointer = { x: 0, y: 0 }, eased = { x: 0, y: 0 };
-  const onStage = new THREE.Vector2(9, 9), gust = new THREE.Vector3(9, 9, 0);
-  let gustPower = 0;
-  addEventListener('pointermove', (e) => {
+  const onStage = new THREE.Vector2(9, 9), lastPointer = new THREE.Vector2(9, 9);
+  const track = (e) => {
     pointer.x = (e.clientX / innerWidth) * 2 - 1;
     pointer.y = (e.clientY / innerHeight) * 2 - 1;
     const r = stage.getBoundingClientRect();
     onStage.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
-    gustPower = Math.min(gustPower + Math.hypot(e.movementX || 0, e.movementY || 0) * 0.004, 1);
-  }, { passive: true });
-  const ray = new THREE.Raycaster(), plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 1.2), hit = new THREE.Vector3();
+  };
+  addEventListener('pointermove', track, { passive: true });
+  addEventListener('pointerdown', track, { passive: true });
+  document.documentElement.addEventListener('pointerleave', () => onStage.set(9, 9));
 
   function resize() {
     const { width, height } = stage.getBoundingClientRect();
@@ -189,10 +189,21 @@ async function init() {
     su.uTime.value = (still || reduced ? 0 : clock.elapsedTime) + 14;
     su.uReveal.value = Math.min(1, ease * 1.15);
     su.uScroll.value = scroll;
-    ray.setFromCamera(onStage, camera);
-    if (ray.ray.intersectPlane(plane, hit)) gust.lerp(hit, 0.06);
-    gustPower *= 0.96;
-    su.uGust.value.set(gust.x, gust.y, su.uGust.value.z + (gustPower - su.uGust.value.z) * 0.05);
+    // cursor → silk: follow softly, part where it rests, ripple and drag when it sweeps
+    const inside = Math.abs(onStage.x) < 1.2 && Math.abs(onStage.y) < 1.2;
+    su.uHover.value += ((inside ? 1 : 0) - su.uHover.value) * 0.05;
+    if (inside) {
+      const fresh = lastPointer.x > 5; // just entered: no jump in velocity
+      su.uPointer.value.lerp(onStage, fresh ? 1 : 0.18);
+      const vx = fresh ? 0 : (onStage.x - lastPointer.x) / Math.max(dt, 1 / 120);
+      const vy = fresh ? 0 : (onStage.y - lastPointer.y) / Math.max(dt, 1 / 120);
+      su.uVel.value.lerp({ x: THREE.MathUtils.clamp(vx, -4, 4), y: THREE.MathUtils.clamp(vy, -4, 4) }, 0.08);
+      lastPointer.copy(onStage);
+    } else {
+      lastPointer.set(9, 9);
+      su.uVel.value.multiplyScalar(0.92);
+    }
+    su.uPower.value += (Math.min(su.uVel.value.length() / 2.5, 1) - su.uPower.value) * 0.06;
     silk.group.rotation.y = eased.x * 0.06;
     silk.group.rotation.x = eased.y * 0.03;
 

@@ -26,7 +26,8 @@ uniform float uTime, uScroll, uLift, uWidth;
 uniform vec4 uPathA;  // x0, x1, y, slope
 uniform vec4 uPathB;  // z, zAmp, bow, phase
 uniform vec4 uWind;   // amp, waves, speed, twist
-uniform vec3 uGust;   // pointer xy (world), strength
+uniform vec2 uPointer, uVel;  // cursor on the canvas (NDC) and its velocity
+uniform float uHover, uPower; // cursor present over the stage · how hard it is moving
 varying vec2 vRib;
 
 vec3 silkCentre(float u) {
@@ -42,11 +43,19 @@ vec3 silkCentre(float u) {
        + 0.22 * sin(u * 8.2 - t * 0.21 + ph * 0.5);
   c.z += a * 1.1 * cos(u * k * 0.8 - t * uWind.z * 0.9 + ph);
   c.x += 0.06 * sin(u * 9.0 - t * 0.7 + ph);
-  // a soft gust where the cursor is
-  vec2 d = c.xy - uGust.xy;
-  float g = exp(-dot(d, d) * 0.8) * uGust.z;
-  c.z -= g * 0.55;
-  c.y += g * 0.12 * sin(u * 22.0 - t * 2.4);
+  // the cursor, measured on screen so every ribbon reacts right under it whatever its depth:
+  // resting over the silk parts it, sweeping drags it along and sets it rippling
+  vec4 cp = projectionMatrix * modelViewMatrix * vec4(c, 1.0);
+  float aspect = projectionMatrix[1][1] / projectionMatrix[0][0];
+  vec2 d = cp.xy / cp.w - uPointer;
+  d.x *= aspect;
+  float r2 = dot(d, d);
+  float f = exp(-r2 * 14.0);
+  float toWorld = 0.268 * cp.w; // NDC → world units at this depth (30° fov)
+  c.xy += d / (sqrt(r2) + 0.04) * f * (0.13 * uHover + 0.12 * uPower) * toWorld;
+  c.xy += vec2(uVel.x * aspect, uVel.y) * f * 0.07 * toWorld;
+  c.z -= f * (0.35 * uHover + 0.5 * uPower);
+  c.y += f * uPower * 0.16 * sin(u * 26.0 - t * 5.0);
   // scrolling carries the silk up and away, parting it from the bottle
   c.y += uScroll * uLift * (0.6 + 0.4 * u);
   c.z += uScroll * 0.6;
@@ -95,7 +104,8 @@ export function createSilk({ only = RIBBONS.map((_, i) => i), segments = 220 } =
   const group = new THREE.Group();
   const shared = {
     uTime: { value: 0 }, uScroll: { value: 0 }, uReveal: { value: 1 },
-    uGust: { value: new THREE.Vector3(0, 0, 0) },
+    uPointer: { value: new THREE.Vector2(9, 9) }, uVel: { value: new THREE.Vector2() },
+    uHover: { value: 0 }, uPower: { value: 0 },
     uFade: { value: new THREE.Vector4(0, 0, 0, 0) }, uRes: { value: new THREE.Vector2(1, 1) },
   };
   const geo = new THREE.PlaneGeometry(1, 1, segments, 6);
